@@ -1,0 +1,17 @@
+{
+  "include": [
+    "src",
+    "test"
+  ],
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "outDir": "dist",
+    "strict": true,
+    "noEmit": true,
+    "declaration": true,
+    "skipLibCheck": true,
+    "declarationMap": true,
+    "esModuleInterop": true,
+    "experimentalDecorators": true
+  }
+}

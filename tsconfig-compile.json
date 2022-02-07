@@ -1,0 +1,17 @@
+{
+  "include": [
+    "src"
+  ],
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "outDir": "dist",
+    "module": "commonjs",
+    "target": "ES2021",
+    "strict": true,
+    "declaration": true,
+    "skipLibCheck": true,
+    "declarationMap": true,
+    "esModuleInterop": true,
+    "experimentalDecorators": true
+  }
+}
