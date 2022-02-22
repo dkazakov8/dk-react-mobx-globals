@@ -2,6 +2,7 @@ export { createContextProps } from './createContextProps';
 export { getActionsFinished } from './getActionsFinished';
 export { createActionsLogger } from './actionsLogger/createActionsLogger';
 export { errorActionCanceledName } from './actions/errorActionCanceledName';
+export { createModularStoresSetter } from './createModularStoresSetter';
 
 export type { TypeActionLog } from './types/TypeActionLog';
 export type { TypeActionGenerator } from './types/TypeActionGenerator';
