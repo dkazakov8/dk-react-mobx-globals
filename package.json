@@ -2,7 +2,7 @@
   "name": "dk-react-mobx-globals",
   "author": "Dmitry Kazakov",
   "license": "MIT",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/dkazakov8/dk-react-mobx-globals.git"
