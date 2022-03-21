@@ -1,7 +1,6 @@
 import { runInAction } from 'mobx';
 import { Component, ComponentClass } from 'react';
 
-import { TypeActionAny } from './types/TypeActionAny';
 import { TypeGlobalsAny } from './types/TypeGlobalsAny';
 import { TypeActionData } from './types/TypeActionData';
 import { unescapeAllStrings } from './utils/unescapeAllStrings';
@@ -133,7 +132,7 @@ export function createModularStoresSetter<TGlobals extends TypeGlobalsAny>(): Co
            *
            */
 
-          globalContext.store[modularStorePath][storeName] = new StoreClass();
+          globalContext.store[modularStorePath][storeName] = new StoreClass!();
 
           this.log(`store extended with "${modularStorePath}.${storeName}"`);
 
@@ -199,9 +198,9 @@ export function createModularStoresSetter<TGlobals extends TypeGlobalsAny>(): Co
         // @ts-ignore
         globalContext.actions[modularStorePath][actionGroupName] = {};
 
-        Object.entries(actionGroup).forEach(([actionName, fn]) => {
+        Object.entries(actionGroup!).forEach(([actionName, fn]) => {
           globalContext.actions[modularStorePath][actionGroupName][actionName] =
-            globalContext.createWrappedAction(fn as TypeActionAny);
+            globalContext.createWrappedAction(fn as any);
         });
 
         this.log(`actions extended with "${modularStorePath}.${actionGroupName}"`);

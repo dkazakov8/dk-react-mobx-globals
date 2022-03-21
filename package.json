@@ -2,7 +2,7 @@
   "name": "dk-react-mobx-globals",
   "author": "Dmitry Kazakov",
   "license": "MIT",
-  "version": "1.0.6",
+  "version": "1.1.1",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/dkazakov8/dk-react-mobx-globals.git"
@@ -22,7 +22,7 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "set -e&&lint-staged"
+      "pre-commit": "set -e&&yarn test&&git add coverage&&lint-staged"
     }
   },
   "devDependencies": {
@@ -44,7 +44,8 @@
     "mobx-react": "7.2.1",
     "ts-node": "10.5.0",
     "typescript": "4.5.5",
-    "lodash": "4.17.21"
+    "lodash": "4.17.21",
+    "history": "5.0.1"
   },
   "peerDependencies": {
     "react": "^17.0.2",
@@ -52,7 +53,8 @@
     "mobx-react": "^7.2.1",
     "dk-localize": "^1.0.4",
     "dk-request": "^1.0.5",
-    "lodash": "^4.17.21"
+    "lodash": "^4.17.21",
+    "history": "^5.0.1"
   },
   "bugs": {
     "url": "https://github.com/dkazakov8/dk-react-mobx-globals/issues"
