@@ -1,21 +1,17 @@
-/* eslint-disable no-restricted-imports */
-
-import isPlainObject from 'lodash/isPlainObject';
 import { observable, runInAction } from 'mobx';
 
 export function mergeObservableDeep(target: Record<string, any>, source: Record<string, any>) {
   for (const key in source) {
-    if (source.hasOwnProperty(key)) {
-      if (isPlainObject(source[key])) {
-        if (!target[key]) {
-          runInAction(() => (target[key] = observable({})));
-        }
+    if (!source.hasOwnProperty(key)) continue;
 
-        mergeObservableDeep(target[key] as Record<string, any>, source[key] as Record<string, any>);
-      } else {
-        runInAction(() => (target[key] = source[key]));
-      }
-    }
+    const sourceItem = source[key];
+    const targetItem = target[key];
+
+    if (Object.prototype.toString.call(sourceItem) === '[object Object]') {
+      if (!targetItem) runInAction(() => (target[key] = observable({})));
+
+      mergeObservableDeep(target[key], sourceItem);
+    } else runInAction(() => (target[key] = sourceItem));
   }
 
   return target;

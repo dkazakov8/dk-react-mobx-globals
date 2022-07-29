@@ -1,6 +1,4 @@
-import _ from 'lodash';
 import { runInAction } from 'mobx';
-import { ComponentClass } from 'react';
 import { createBrowserHistory } from 'history';
 
 import { TypeGlobalsAny } from './types/TypeGlobalsAny';
@@ -8,8 +6,10 @@ import { TypeActionWrapped } from './types/TypeActionWrapped';
 import { TypeRoutesGenerator } from './types/TypeRoutesGenerator';
 import { TypeRedirectToParams } from './types/TypeRedirectToParams';
 import { getDynamicValues } from './utils/getDynamicValues';
+import { setResponseStatus } from './utils/setResponseStatus';
 import { findRouteByPathname } from './utils/findRouteByPathname';
 import { replaceDynamicValues } from './utils/replaceDynamicValues';
+import { loadComponentToConfig } from './utils/loadComponentToConfig';
 
 type TypeParamsGenerator<TRoutes extends TypeRoutesGenerator<any>> = {
   routes: TRoutes;
@@ -31,55 +31,55 @@ export function redirectToGenerator<TRoutes extends TypeRoutesGenerator<any>>({
   routerStore,
   routeError404,
   routeError500,
-}: TypeParamsGenerator<TRoutes>): (params: TypeRedirectToParams<TRoutes>) => Promise<void> {
-  return ({ route, params = {}, noHistoryPush }) => {
-    const pathname = history.location.pathname;
-
-    /**
-     * IS_SERVER ? This is initial call from server, we should extract url from req
-     * IS_CLIENT ? This is expected to be browser's back/forward event, we should extract url from location
-     *
-     */
-
+}: TypeParamsGenerator<TRoutes>): (redirectParams: TypeRedirectToParams<TRoutes>) => Promise<void> {
+  return ({ route, params = {}, noHistoryPush, pathname }) => {
     if (!route) {
-      const nextRoute = findRouteByPathname({ pathname, routes });
+      if (!pathname) throw new Error('redirectToGenerator: pathname should exist when no route');
 
-      if (!nextRoute) {
-        return redirectTo({
-          route: routeError404,
-          noHistoryPush,
-        });
-      }
-
-      /**
-       * Extract params from pathname & redirect with all necessary data
-       *
-       */
-
-      const nextParams = getDynamicValues({ routesObject: nextRoute, pathname });
+      const nextRoute = findRouteByPathname({ pathname, routes }) || routeError404;
 
       return redirectTo({
         route: nextRoute,
-        params: nextParams,
+        params: getDynamicValues({ routesObject: nextRoute, pathname }),
         noHistoryPush,
       });
     }
 
-    const prevRoute = routerStore.currentRoute ? routes[routerStore.currentRoute.name] : null;
-    const prevPathname = prevRoute
-      ? replaceDynamicValues({ routesObject: prevRoute, params: prevRoute.params })
+    const currentRouteConfig = routes[routerStore.currentRoute?.name];
+    const prevPathname = currentRouteConfig
+      ? replaceDynamicValues({
+          routesObject: currentRouteConfig,
+          params: currentRouteConfig.params,
+        })
       : null;
     const nextPathname = replaceDynamicValues({ routesObject: route, params });
     const nextParams = getDynamicValues({ routesObject: route, pathname: nextPathname });
 
     // Prevent redirect to the same route
-    if (isClient && prevPathname === nextPathname) return Promise.resolve();
+    if (isClient && prevPathname === nextPathname) {
+      return loadComponentToConfig({ componentConfig: routes[routerStore.currentRoute.name] });
+    }
 
     return Promise.resolve()
-      .then(() => (prevRoute?.beforeLeave || _.stubTrue)(globals, route))
-      .then(() => (route.beforeEnter || _.stubTrue)(globals))
+      .then(() => setResponseStatus({ res: globals.res, routes, route, isClient }))
+      .then(() => currentRouteConfig?.beforeLeave?.(globals, route))
+      .then(() => route.beforeEnter?.(globals))
       .then((redirectParams?: TypeRedirectToParams<TRoutes>) => {
-        if (typeof redirectParams === 'object') return redirectTo(redirectParams);
+        if (typeof redirectParams === 'object') {
+          const err = new Error(
+            replaceDynamicValues({
+              params: redirectParams.params || {},
+              routesObject: redirectParams.route!,
+            })
+          );
+
+          err.name = 'REDIRECT';
+
+          // @ts-ignore
+          if (isClient) err.data = redirectParams;
+
+          return Promise.reject(err);
+        }
 
         runInAction(() => {
           /**
@@ -90,7 +90,13 @@ export function redirectToGenerator<TRoutes extends TypeRoutesGenerator<any>>({
            *
            */
 
-          routerStore.currentRoute = { name: route.name, path: route.path, params: nextParams };
+          routerStore.currentRoute = {
+            name: route.name,
+            path: route.path,
+            params: nextParams,
+            beforeLeave: route.beforeLeave,
+            beforeEnter: route.beforeEnter,
+          };
 
           const lastPathname = routerStore.routesHistory[routerStore.routesHistory.length - 1];
 
@@ -101,37 +107,38 @@ export function redirectToGenerator<TRoutes extends TypeRoutesGenerator<any>>({
 
         return Promise.resolve();
       })
-      .then(() => {
-        const currentRouteName = routerStore.currentRoute.name;
-        const componentConfig = routes[currentRouteName];
-
-        if (!componentConfig.component) {
-          return componentConfig
-            .loader()
-            .then(
-              (module: { default: ComponentClass }) => (componentConfig.component = module.default)
-            )
-            .then(() => undefined);
-        }
-
-        return Promise.resolve();
-      })
+      .then(() =>
+        isClient
+          ? loadComponentToConfig({ componentConfig: routes[routerStore.currentRoute.name] })
+          : undefined
+      )
       .catch((error) => {
         // For preventing redirects in beforeLeave
-        if (error?.name === 'SILENT') return;
+        if (error?.name === 'SILENT') return Promise.resolve();
+
+        if (isClient && error.data) {
+          return redirectTo(error.data);
+        }
 
         /**
          * Log error happened in beforeEnter | beforeLeave and draw error500 page
          * without changing URL
          *
          */
+
+        if (error.name === 'REDIRECT') throw error;
+
         console.error(error);
 
-        const nextRoute = routeError500;
-
         runInAction(() => {
-          routerStore.currentRoute = { name: nextRoute.name, path: nextRoute.path, params: {} };
+          routerStore.currentRoute = {
+            name: routeError500.name,
+            path: routeError500.path,
+            params: {},
+          };
         });
+
+        return Promise.resolve();
       });
   };
 }

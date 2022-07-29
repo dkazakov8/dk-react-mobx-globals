@@ -4,6 +4,8 @@ import { getCreateWrappedAction } from './actions/getCreateWrappedAction';
 import { TypeCreateContextParams } from './types/TypeCreateContextParams';
 
 export function createContextProps<TGlobals extends TypeGlobalsAny>({
+  req,
+  res,
   api,
   request,
   staticStores,
@@ -21,6 +23,8 @@ export function createContextProps<TGlobals extends TypeGlobalsAny>({
   }
 
   const globals: TGlobals = {
+    req,
+    res,
     api: {},
     getLn: () => false,
     store: new StoreRoot(),
@@ -47,16 +51,22 @@ export function createContextProps<TGlobals extends TypeGlobalsAny>({
 
   // eslint-disable-next-line guard-for-in
   for (const apiName in api) {
-    const { url, headers } = api[apiName];
+    const { url, headers, omitResponseValidation, method, disableCredentials } = api[apiName];
 
-    globals.api[apiName] = getCreateWrappedApi({
-      url,
-      apiName,
-      request,
-      headers,
-      validatorRequest: apiValidators[apiName]?.TypeRequest,
-      validatorResponse: apiValidators[apiName]?.TypeResponse,
-    });
+    globals.api[apiName] = getCreateWrappedApi(
+      {
+        url,
+        method,
+        apiName,
+        request,
+        headers,
+        validatorRequest: apiValidators[apiName]?.TypeRequest,
+        validatorResponse: apiValidators[apiName]?.TypeResponse,
+        disableCredentials,
+        omitResponseValidation,
+      },
+      globals
+    );
   }
 
   return globals;

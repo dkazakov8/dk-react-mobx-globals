@@ -1,9 +1,13 @@
+export { mockActions } from './mockActions';
 export { createRouter } from './createRouter';
+export { getActionsLogs } from './getActionsLogs';
+export { getPlainActions } from './getPlainActions';
+export { escapeAllStrings } from './utils/escapeAllStrings';
 export { createRouterStore } from './createRouterStore';
 export { createContextProps } from './createContextProps';
-export { getActionsFinished } from './getActionsFinished';
+export { unescapeAllStrings } from './utils/unescapeAllStrings';
 export { redirectToGenerator } from './redirectToGenerator';
-export { createActionsLogger } from './actionsLogger/createActionsLogger';
+export { mergeObservableDeep } from './utils/mergeObservableDeep';
 export { errorActionCanceledName } from './actions/errorActionCanceledName';
 export { createModularStoresSetter } from './createModularStoresSetter';
 
@@ -13,5 +17,6 @@ export type { TypeRoutesGenerator } from './types/TypeRoutesGenerator';
 export type { TypeGlobalsGenerator } from './types/TypeGlobalsGenerator';
 export type { TypeRedirectToParams } from './types/TypeRedirectToParams';
 export type { TypeApiErrorGenerator } from './types/TypeApiErrorGenerator';
+export type { TypeCreateContextParams } from './types/TypeCreateContextParams';
 export type { TypeApiRequestGenerator } from './types/TypeApiRequestGenerator';
 export type { TypeApiResponseGenerator } from './types/TypeApiResponseGenerator';

@@ -1,7 +1,7 @@
 {
   "extension": ["ts"],
   "spec": "test/**/*.test.ts",
-  "require": "ts-node/register",
+  "require": "@swc-node/register",
   "bail": true,
   "slow": 2
 }

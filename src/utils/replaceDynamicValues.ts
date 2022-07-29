@@ -4,26 +4,26 @@ import { constants } from './constants';
 import { isDynamic } from './isDynamic';
 import { clearDynamic } from './clearDynamic';
 
-export function replaceDynamicValues<TRouteItem extends TypeRouteItem>(args: {
+const re = new RegExp(`[^${constants.pathPartSeparator}]+`, 'g');
+
+export function replaceDynamicValues<TRouteItem extends TypeRouteItem>({
+  routesObject,
+  params,
+}: {
   routesObject: TRouteItem;
   params: TRouteItem['params'];
 }): string {
-  const { routesObject, params } = args;
+  return routesObject.path.replace(re, (paramName) => {
+    if (!isDynamic(paramName)) return paramName;
 
-  return routesObject.path
-    .split(constants.pathPartSeparator)
-    .map((paramName: string) => {
-      if (!isDynamic(paramName)) return paramName;
+    const value = params[clearDynamic(paramName)];
 
-      const value = params[clearDynamic(paramName)];
+    if (!value) {
+      throw new Error(
+        `replaceDynamicValues: no param "${paramName}" passed for route ${routesObject.name}`
+      );
+    }
 
-      if (!value) {
-        throw new Error(
-          `replaceDynamicValues: no param "${paramName}" passed for route ${routesObject.name}`
-        );
-      }
-
-      return value;
-    })
-    .join(constants.pathPartSeparator);
+    return value;
+  });
 }

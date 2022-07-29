@@ -4,19 +4,26 @@ import { TypeRoutesGenerator } from './types/TypeRoutesGenerator';
 
 export function createRouterStore<TRoutes extends TypeRoutesGenerator<any>>({
   routes,
+  isClient,
 }: {
   routes: TRoutes;
+  isClient: boolean;
 }) {
   return class StoreRouter {
     actionsLogs: Array<Array<TypeActionLog>> = [];
-    actionsFirstCompleted = false;
 
     routesHistory: Array<string> = [];
     // @ts-ignore
     currentRoute: Omit<TRoutes[keyof TRoutes], 'loader' | 'component'> = {};
 
+    get actionsLogsClear() {
+      if (isClient) return this.actionsLogs.filter((log) => log[0].routeName !== 'server');
+
+      return this.actionsLogs;
+    }
+
     get lastActionsLog() {
-      return this.actionsLogs[this.actionsLogs.length - 1];
+      return this.actionsLogsClear[this.actionsLogsClear.length - 1];
     }
 
     get previousRoutePathname() {

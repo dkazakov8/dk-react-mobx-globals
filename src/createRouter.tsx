@@ -1,12 +1,12 @@
 /* eslint-disable react/no-set-state, @typescript-eslint/naming-convention */
 
 import { observer } from 'mobx-react';
+import { runInAction } from 'mobx';
 import { createBrowserHistory } from 'history';
 import { ReactElement, Component, ComponentClass } from 'react';
-import { runInAction } from 'mobx';
 
-import { TypeActionWrapped } from './types/TypeActionWrapped';
 import { appendAutorun } from './utils/appendAutorun';
+import { TypeActionWrapped } from './types/TypeActionWrapped';
 import { TypeRoutesGenerator } from './types/TypeRoutesGenerator';
 
 const Dumb = () => null;
@@ -24,69 +24,74 @@ type PropsRouter<TRoutes extends TypeRoutesGenerator<any>> = {
 export function createRouter<TRoutes extends TypeRoutesGenerator<any>>(): ComponentClass<
   PropsRouter<TRoutes>
 > {
-  @observer
-  class RouterComponent extends Component<PropsRouter<TRoutes>> {
-    state: {
-      loadedComponent?: ReactElement;
-      loadedComponentName?: keyof TRoutes;
-    } = {
-      loadedComponent: undefined,
-      loadedComponentName: undefined,
-    };
+  return observer(
+    class RouterComponent extends Component<PropsRouter<TRoutes>> {
+      state: {
+        loadedComponent?: ReactElement;
+        loadedComponentName?: keyof TRoutes;
+      } = {
+        loadedComponent: undefined,
+        loadedComponentName: undefined,
+      };
 
-    componentDidMount() {
-      this.redirectOnHistoryPop();
-      appendAutorun(this, this.setLoadedComponent);
-    }
-
-    redirectOnHistoryPop = () => {
-      if (!this.props.history) return;
-
-      const { routerStore, redirectTo } = this.props;
-
-      this.props.history.listen((params) => {
-        if (params.action !== 'POP') return;
-
-        if (routerStore.previousRoutePathname === params.location.pathname) {
-          runInAction(() => routerStore.routesHistory.pop());
-        }
-
-        void redirectTo({ noHistoryPush: true });
-      });
-    };
-
-    setLoadedComponent = () => {
-      const { routerStore, routes, redirectTo, beforeComponentMount } = this.props;
-
-      const currentRouteName = routerStore.currentRoute.name;
-
-      if (redirectTo.state.isExecuting || this.state.loadedComponentName === currentRouteName) {
-        return;
+      UNSAFE_componentWillMount() {
+        this.redirectOnHistoryPop();
+        appendAutorun(this, this.setLoadedComponent);
       }
 
-      const componentConfig = routes[currentRouteName];
-      const props = 'props' in componentConfig ? componentConfig.props : {};
+      redirectOnHistoryPop = () => {
+        const { history, routerStore, redirectTo } = this.props;
 
-      // trigger componentWillUnmount on previous component to clear executed actions
-      this.setState({ loadedComponent: <Dumb /> }, () => {
+        if (!history) return;
+
+        history.listen((params) => {
+          if (params.action !== 'POP') return;
+
+          if (routerStore.previousRoutePathname === params.location.pathname) {
+            runInAction(() => routerStore.routesHistory.pop());
+          }
+
+          void redirectTo({ noHistoryPush: true, pathname: history.location.pathname });
+        });
+      };
+
+      setLoadedComponent = () => {
+        const { loadedComponentName } = this.state;
+        const { routerStore, redirectTo } = this.props;
+
+        const currentRouteName = routerStore.currentRoute.name;
+
+        if (redirectTo.state.isExecuting || loadedComponentName === currentRouteName) return;
+
+        if (!loadedComponentName) {
+          this.setComponent(currentRouteName);
+        } else {
+          // trigger componentWillUnmount on previous component to clear executed actions
+          this.setState({ loadedComponent: <Dumb /> }, () => this.setComponent(currentRouteName));
+        }
+      };
+
+      setComponent = (currentRouteName: keyof TRoutes) => {
+        const { routes, beforeComponentMount } = this.props;
+
         beforeComponentMount?.();
 
-        const RouteComponent = componentConfig.component!;
+        const componentConfig = routes[currentRouteName];
+        const props = 'props' in componentConfig ? componentConfig.props : {};
+        const RouteComponent = componentConfig.component || componentConfig.loader;
 
         this.setState({
           loadedComponent: <RouteComponent {...props} />,
           loadedComponentName: currentRouteName,
         });
-      });
-    };
+      };
 
-    render() {
-      const { loadedComponent } = this.state;
-      const { wrapperClassName } = this.props;
+      render() {
+        const { loadedComponent } = this.state;
+        const { wrapperClassName } = this.props;
 
-      return <div className={wrapperClassName}>{loadedComponent}</div>;
+        return <div className={wrapperClassName}>{loadedComponent}</div>;
+      }
     }
-  }
-
-  return RouterComponent;
+  );
 }

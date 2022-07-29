@@ -2,6 +2,7 @@
 .idea
 node_modules
 yarn.lock
+pnpm-lock.yaml
 .eslintrc.js
 .stylelintrc.js
 .formatignore
@@ -17,4 +18,3 @@ src
 .mocharc.json
 tsconfig.json
 tsconfig-compile.json
-/ts-interface-builder

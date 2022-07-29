@@ -1,4 +1,5 @@
 import { getLn } from 'dk-localize';
+import { Request, Response } from 'express';
 
 import { TypeApiItem } from './TypeApiItem';
 import { TypeActionAny } from './TypeActionAny';
@@ -18,6 +19,8 @@ export type TypeGlobalsGenerator<
   TModularActions extends Record<string, Record<string, Record<string, TypeActionAny>>>,
   TGetLn extends typeof getLn
 > = {
+  req?: Request;
+  res?: Response;
   api: TypeApiGenerator<TApi>;
   getLn: TypeSkipFirstArg<TGetLn>;
   store: TypeStoreGenerator<TStaticStores, TModularStores>;

@@ -8,11 +8,11 @@ import { TypeRoutesGenerator } from '../src/types/TypeRoutesGenerator';
 const routesObject = {
   dynamicRoute: {
     name: 'dynamicRoute',
-    path: '/test/:param',
+    path: '/test/:static',
     validators: {
-      param: (value: string) => value.length > 2,
+      static: (value: string) => value.length > 2,
     },
-    params: { param: '1' } as { param: string },
+    params: { static: '1' } as { static: string },
     loader: undefined,
   },
   staticRoute: {
@@ -21,30 +21,52 @@ const routesObject = {
     params: {},
     loader: undefined,
   },
+  dynamicRoute2: {
+    name: 'dynamicRoute2',
+    path: '/test3/:static',
+    validators: {
+      static: (value: string) => value.length > 2,
+    },
+    params: { static: '1' } as { static: string },
+    loader: undefined,
+  },
   dynamicRouteNoValidators: {
-    name: 'dynamicRoute',
+    name: 'dynamicRouteNoValidators',
     path: '/test2/:param',
     params: { param: '1' } as { param: string },
+    loader: undefined,
+  },
+  dynamicRouteMultiple: {
+    name: 'dynamicRouteMultiple',
+    path: '/test/:param/:param2',
+    validators: {
+      param: (value: string) => value.length > 2,
+      param2: (value: string) => value.length > 2,
+    },
+    params: { param: '1', param2: '1' } as { param: string; param2: string },
     loader: undefined,
   },
 };
 
 export const routes = routesObject as TypeRoutesGenerator<typeof routesObject>;
 
-describe('findRouteByPathname', () => {
+describe('findRouteByPathname', function test() {
   it('Get correct static route by path', () => {
     const route = findRouteByPathname({ routes, pathname: '/test/static' });
 
     expect(route).to.deep.eq(routes.staticRoute);
   });
 
-  it('Get correct dynamic route by path', () => {
-    const route = findRouteByPathname({
-      routes,
-      pathname: '/test/dynamic',
-    });
+  it('Get correct static route by path with slash', () => {
+    const route = findRouteByPathname({ routes, pathname: '/test/static/' });
 
-    expect(route).to.deep.eq(routes.dynamicRoute);
+    expect(route).to.deep.eq(routes.staticRoute);
+  });
+
+  it('Get correct dynamic route by path', () => {
+    const route = findRouteByPathname({ routes, pathname: '/test3/123/' });
+
+    expect(route).to.deep.eq(routes.dynamicRoute2);
   });
 
   it('Pass empty param to dynamic route (no route found)', () => {
@@ -87,14 +109,23 @@ describe('findRouteByPathname', () => {
   });
 });
 
-describe('replaceDynamicValues', () => {
-  it('Dynamic params test', () => {
+describe('replaceDynamicValues', function test() {
+  it('Dynamic params', () => {
     const pathname = replaceDynamicValues({
       routesObject: routes.dynamicRoute,
-      params: { param: 'dynamic' },
+      params: { static: 'dynamic' },
     });
 
     expect(pathname).to.be.eq('/test/dynamic');
+  });
+
+  it('Dynamic params multiple', () => {
+    const pathname = replaceDynamicValues({
+      routesObject: routes.dynamicRouteMultiple,
+      params: { param: 'dynamic', param2: 'dynamic2' },
+    });
+
+    expect(pathname).to.be.eq('/test/dynamic/dynamic2');
   });
 
   it('(error) No dynamic param value', () => {
@@ -104,18 +135,27 @@ describe('replaceDynamicValues', () => {
         // @ts-ignore
         params: {},
       });
-    }).to.throw(`replaceDynamicValues: no param ":param" passed for route dynamicRoute`);
+    }).to.throw(`replaceDynamicValues: no param ":static" passed for route dynamicRoute`);
   });
 });
 
-describe('getDynamicValues', () => {
+describe('getDynamicValues', function test() {
   it('Should return params from pathname', () => {
     const params = getDynamicValues({
       routesObject: routes.dynamicRoute,
       pathname: '/test/dynamic',
     });
 
-    expect(params).to.deep.equal({ param: 'dynamic' });
+    expect(params).to.deep.equal({ static: 'dynamic' });
+  });
+
+  it('Should return multi params from pathname', () => {
+    const params = getDynamicValues({
+      routesObject: routes.dynamicRouteMultiple,
+      pathname: '/test/dynamic/dynamic2',
+    });
+
+    expect(params).to.deep.equal({ param: 'dynamic', param2: 'dynamic2' });
   });
 
   it('Should return empty params', () => {

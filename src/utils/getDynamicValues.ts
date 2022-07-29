@@ -17,14 +17,10 @@ export function getDynamicValues<TRouteItem extends TypeRouteItem>(params: {
   const dynamicParams: TRouteItem['params'] = {};
 
   for (let i = 0; i < routePathnameArray.length; i++) {
-    const paramNameDirty = routePathnameArray[i];
+    const paramName = routePathnameArray[i];
 
-    if (!isDynamic(paramNameDirty)) continue;
-
-    const paramName: keyof TRouteItem['params'] = clearDynamic(paramNameDirty);
-    const paramValueFromUrl: any = pathnameArray[i];
-
-    dynamicParams[paramName] = paramValueFromUrl;
+    // @ts-ignore
+    if (isDynamic(paramName)) dynamicParams[clearDynamic(paramName)] = pathnameArray[i];
   }
 
   return dynamicParams;

@@ -25,14 +25,20 @@ export const wrapAction = (params: {
         .catch((error) => {
           afterExecutionBound(null);
 
-          runInAction(() => ((wrappedAction as TypeActionWrapped).state.error = error.message));
+          runInAction(() => {
+            (wrappedAction as TypeActionWrapped).state.error = error.message;
+            (wrappedAction as TypeActionWrapped).state.errorName = error.name;
+          });
 
           return Promise.reject(error);
         });
     } catch (error: any) {
       afterExecutionBound(null);
 
-      runInAction(() => ((wrappedAction as TypeActionWrapped).state.error = error.message));
+      runInAction(() => {
+        (wrappedAction as TypeActionWrapped).state.error = error.message;
+        (wrappedAction as TypeActionWrapped).state.errorName = error.name;
+      });
 
       params.onError(error);
 

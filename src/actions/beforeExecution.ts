@@ -12,4 +12,5 @@ export const beforeExecution = action((fn: any) => {
   fn.state.isExecuting = true;
   fn.state.timeStart = getCurrentTime();
   fn.state.error = undefined;
+  fn.state.errorName = undefined;
 });
